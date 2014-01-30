@@ -1,0 +1,14 @@
+body{margin:0;padding:10px}
+map{display:block;width:800px;height:410px;margin:0 auto}
+g{pointer-events:all;opacity:.5}
+g:hover{opacity:1}
+g.active{opacity:.9}
+image{pointer-events:none}
+.st0{fill:#E1A780}
+.st1{fill:#E5C98C}
+.st2{fill:#F0D2BD}
+.st3{fill:#F2E3C5}
+.st4{fill:#C9D08A}
+.st5{fill:#CFDADA}
+.st6{fill:#A2B7B9}
+.st7{fill:#DADFC2}

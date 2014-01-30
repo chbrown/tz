@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <title>Timezones</title>
+  <link rel="stylesheet" type="text/css" href="static/site.css" media="all" />
+  <script src="static/lib/underscore.min.js"></script>
+  <script src="static/lib/angular.min.js"></script>
+  <script src="static/lib/ngStorage.min.js"></script>
+  <script src="static/lib/moment.js"></script>
+  <script src="static/data.js"></script>
+  <script src="static/app.js"></script>
+  <!-- Dev: http://ghkl/tz -->
+</head>
+<body ng-app="app" ng-controller="TimezoneCtrl">
+  <section>
+    <map ng-model="$storage.timezone">
+      <div ng-bind-html="$storage.svg | trust"></div>
+    </map>
+    <h2>From: {{start}}</h2>
+    <h2>To: {{end}}</h2>
+  </section>
+</body>

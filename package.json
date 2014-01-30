@@ -1,0 +1,26 @@
+{
+  "name": "chbrown/tz",
+  "version": "0.0.1",
+  "description": "Timezone converter",
+  "homepage": "http://chbrown.github.io/tz",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/chbrown/tz.git"
+  },
+  "bugs": {
+    "email": "Christopher Brown <io@henrian.com>",
+    "url": "http://github.com/chbrown/tz/issues"
+  },
+  "license": "MIT",
+  "author": "Christopher Brown <io@henrian.com> (http://henrian.com)",
+  "staticDependencies": {
+    "angular": "*",
+    "moment": "*",
+    "ngStorage": {
+      "url": "git://github.com/gsklee/ngStorage.git",
+      "filter": ["ngStorage.js", "ngStorage.min.js"]
+    },
+    "underscore": "*"
+  },
+  "staticPattern": "static/lib/{file}"
+}
