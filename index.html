@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
   <meta charset="utf-8">
-  <title>Timezones</title>
+  <title>Timezone Conversion</title>
   <link rel="stylesheet" type="text/css" href="static/site.css" media="all" />
   <script src="static/lib/underscore.min.js"></script>
   <script src="static/lib/angular.min.js"></script>
@@ -13,10 +13,26 @@
 </head>
 <body ng-app="app" ng-controller="TimezoneCtrl">
   <section>
-    <map ng-model="$storage.timezone">
-      <div ng-bind-html="$storage.svg | trust"></div>
-    </map>
-    <h2>From: {{start}}</h2>
-    <h2>To: {{end}}</h2>
+    <map ng-model="$storage.timezone" src="'static/zones.svg'"></map>
+  </section>
+  <section>
+    <div style="width: 50%; display: inline-block;">
+      <h2>Now</h2>
+      <h3>Local:</h3>
+      <p>{{now.local}}</p>
+      <h3>UTC:</h3>
+      <p>{{now.utc}}</p>
+      <h3>{{$storage.timezone}}:</h3>
+      <p>{{now.remote}}</p>
+    </div>
+    <div style="width: 48%; display: inline-block;">
+      <h2>Deadline</h2>
+      <input type="date" ng-model="$storage.deadline_date" />
+      <input type="time" ng-model="$storage.deadline_time" />
+      <h3>Local:</h3>
+      <p>{{deadline.local}}</p>
+      <h3>Countdown:</h3>
+      <p>{{deadline.difference}}</p>
+    </div>
   </section>
 </body>

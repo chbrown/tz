@@ -2,13 +2,16 @@
 var app = angular.module('app', ['ngStorage']);
 var p = console.log.bind(console);
 
-// app.filter('where', function() {
-//   return _.where;
-// });
+var local_offset_ms = (new Date()).getTimezoneOffset() * 60 * 1000;
+var datetime_format = 'MMMM Do YYYY, h:mm:ss a';
 
-// app.filter('encode', function() {
-//   return window.encodeURIComponent;
-// });
+var mouse_down = false;
+document.addEventListener('mousedown', function(ev) {
+  mouse_down = true;
+});
+document.addEventListener('mouseup', function(ev) {
+  mouse_down = false;
+});
 
 app.filter('trust', function($sce) {
   return function(string) {
@@ -18,28 +21,52 @@ app.filter('trust', function($sce) {
 
 app.controller('TimezoneCtrl', function($scope, $localStorage) {
   $scope.$storage = $localStorage.$default({
-    timezone: 'UTC'
+    timezone: 'UTC',
+    deadline_date: moment().add(local_offset_ms).format('YYYY-MM-DD'),
+    deadline_time: moment().add(local_offset_ms).format('HH:mm'),
   });
 
   var refresh = function() {
-    var local_offset_minutes = (new Date()).getTimezoneOffset();
-    var local_offset_ms = local_offset_minutes * 60 * 1000;
-    // utc = localTime + localOffset;
-    var local_ms = (new Date()).getTime();
-    var utc_ms = local_ms + local_offset_ms;
-    // moment.tz(now, "America/Toronto").format();
-
-
-    var destination_tz_tuple = _.find(tzdata, function(tz_tuple) {
+    // look up the remote timezone
+    var remote_tz_tuple = _.find(tzdata, function(tz_tuple) {
       return tz_tuple[0] == $scope.$storage.timezone;
     });
-    var destination_offset_ms = destination_tz_tuple[2] * 60 * 60 * 1000;
-    p('destination_offset_ms', destination_offset_ms);
-    var destination_ms = utc_ms - destination_offset_ms;
+    var remote_offset_ms = remote_tz_tuple[2] * 60 * 60 * 1000;
 
-    $scope.start = moment(local_ms).format('MMMM Do YYYY, h:mm:ss a') + ' local';
-    // $scope.end = moment(utc_ms).format('MMMM Do YYYY, h:mm:ss a') + ' UTC';
-    $scope.end = moment(destination_ms).format('MMMM Do YYYY, h:mm:ss a') + ' ' + $scope.$storage.timezone;
+    // refresh now values
+    var now_ms = (new Date()).getTime();
+    $scope.now = {
+      local: moment(now_ms).format(datetime_format),
+      // format UTC by adding local offset
+      utc: moment(now_ms + local_offset_ms).format(datetime_format),
+      // format remote time by adding local offset and substracting remote offset
+      remote: moment(now_ms + local_offset_ms - remote_offset_ms).format(datetime_format),
+    };
+
+    // compute countdown
+    var deadline_naive = moment.utc(($scope.$storage.deadline_date || '') + 'T' + ($scope.$storage.deadline_time || ''));
+    // convert to UTC so that we can compare to now
+    var deadline_ms = deadline_naive.valueOf() + remote_offset_ms;
+    // simple difference:
+    var countdown_ms = deadline_ms - now_ms;
+    // positive countdown means it's in the future; negative means it's already passed
+    var suffix = countdown_ms > 0 ? 'in the future' : 'ago';
+    countdown_ms = Math.abs(countdown_ms);
+
+    var duration = moment.duration(countdown_ms);
+    var duration_props = ['years', 'months', 'days', 'hours', 'minutes', 'seconds'];
+    var parts = duration_props.map(function(prop) {
+      return {name: prop, value: duration[prop]()};
+    }).filter(function(part) {
+      return part.value > 0;
+    }).map(function(part) {
+      return part.value + ' ' + part.name;
+    });
+    // $scope.countdown = duration.humanize(true);
+    $scope.deadline = {
+      local: moment(deadline_ms).format(datetime_format),
+      difference: parts.join(', ') + ' ' + suffix,
+    };
   };
   refresh();
 
@@ -57,44 +84,68 @@ app.directive('map', function($localStorage, $http) {
   return {
     restrict: 'E',
     require: 'ngModel',
-    link: function(scope, el, attrs, ngModel) {
+    scope: {
+      src: '=src'
+    },
+    template:
+      '<h4 style="float: right">{{hover}}</h4>' +
+      '<h3>Timezone Conversion</h3>' +
+      '<div ng-bind-html="svg | trust"></div>',
+    link: function(scope, ngElement, attrs, ngModel) {
+      var el = ngElement[0];
       var ready = function() {
-        var gs = el.find('g');
-        gs.on('mouseover', function(ev) {
-          var g = ev.target.parentNode;
-          g.className = 'active';
-          scope.$apply(function() {
-            ngModel.$setViewValue(g.id);
-          });
+        scope.$apply(function() {
+          scope.hover = ngModel.$modelValue;
         });
-        gs.on('mouseout', function(ev) {
+
+        var gs = ngElement.find('g');
+        var saved = el.querySelector('[id="' + ngModel.$modelValue + '"]');
+        if (saved) {
+          saved.classList.add('active');
+        }
+
+        var mousemove = function(ev, mouse_down) {
           var g = ev.target.parentNode;
-          g.className = '';
-          p('mouseout', g);
-          // scope.$apply(function() {
-          //   ngModel.$setViewValue(g.id);
-          // });
+
+          if (mouse_down) {
+            gs.removeClass('active');
+            g.classList.add('active');
+          }
+
+          scope.$apply(function() {
+            scope.hover = g.id;
+            if (mouse_down) {
+              ngModel.$setViewValue(g.id);
+            }
+          });
+        };
+        gs.on('mouseover', function(ev) {
+          mousemove(ev, mouse_down);
+        });
+        gs.on('mousedown', function(ev) {
+          mousemove(ev, true);
         });
       };
 
       if ($localStorage.svg) {
-        el.ready(ready);
+        scope.svg = $localStorage.svg;
+        // ready();
+        ngElement.ready(ready);
       }
       else {
         // go retrieve it if needed
-        $http.get('static/zones.svg').then(function(res) {
+        $http.get(scope.src).then(function(res) {
           scope.svg = $localStorage.svg = res.data;
-          el.ready(ready);
+          // ready();
+          ngElement.ready(ready);
         }, function(res) {
-          p('Error', res);
+          console.error('Error', res);
         });
       }
 
     }
   };
 });
-
-
 
 // var lookup = {};
 // var timezones = timezone_tuples.map(function(tuple) { // [id, name, offset]
@@ -123,7 +174,6 @@ function validateInput(input) {
     var src_tz = src_tz_match && lookup[src_tz_match[0]];
     if (time_am_pm && src_tz && dest_tz) {
       $('#timezones').html(src_tz.name + ' <span class="conn">to</span> ' + dest_tz.name);
-      // console.log(time_am_pm, src_tz, dest_tz);
       return convertTimeFromTo(time_am_pm, src_tz, dest_tz);
     }
     else {
