@@ -3,16 +3,9 @@
   "version": "0.0.1",
   "description": "Timezone converter",
   "homepage": "http://chbrown.github.io/tz",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/chbrown/tz.git"
-  },
-  "bugs": {
-    "email": "Christopher Brown <io@henrian.com>",
-    "url": "http://github.com/chbrown/tz/issues"
-  },
+  "repository": "github:chbrown/tz",
   "license": "MIT",
-  "author": "Christopher Brown <io@henrian.com> (http://henrian.com)",
+  "author": "Christopher Brown <io@henrian.com>",
   "staticDependencies": {
     "angular": "*",
     "moment": "*",
